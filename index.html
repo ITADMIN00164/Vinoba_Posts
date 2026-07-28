@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinoba Posts · Upload</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand"><span class="dot"></span> Vinoba Posts</div>
+    <span class="spacer"></span>
+    <a href="index.html" class="active">Upload</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+
+  <div class="wrap">
+    <h1>Upload weekly post list</h1>
+    <p class="sub">Add a week's export to the database. Duplicate posts (same PostId) are blocked automatically.</p>
+
+    <div class="card">
+      <h2>1 · REPORTING PERIOD</h2>
+      <div class="row">
+        <div class="field">
+          <label for="startDate">Start Date</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="field">
+          <label for="endDate">End Date</label>
+          <input type="date" id="endDate">
+        </div>
+      </div>
+
+      <h2 style="margin-top:8px;">2 · FILE</h2>
+      <div class="field">
+        <label for="fileInput">Choose a .xlsx, .xlsm or .csv file</label>
+        <input type="file" id="fileInput" accept=".xlsx,.xlsm,.csv">
+      </div>
+      <p class="hint">Columns must exactly match the required format. Not sure? Download the template below.</p>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn" id="uploadBtn">Upload to database</button>
+        <button class="btn ghost" id="templateBtn">⬇ Download file format</button>
+      </div>
+
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <!-- libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- app -->
+  <script src="js/config.js"></script>
+  <script src="js/upload.js"></script>
+</body>
+</html>
