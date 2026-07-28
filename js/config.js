@@ -10,7 +10,7 @@ window.CONFIG = {
   SUPABASE_URL: "https://bbizdjhlgrmlwobzxfgl.supabase.co",
 
   // 👇 PASTE YOUR ANON PUBLIC KEY HERE (it starts with "eyJ...")
-  SUPABASE_ANON_KEY: "PASTE_YOUR_ANON_PUBLIC_KEY_HERE",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiaXpkamhsZ3JtbHdvYnp4ZmdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMjIxNTIsImV4cCI6MjEwMDc5ODE1Mn0.DZq0HSkph0pnpA8Mf3lL7IlRQvQjskTN2HDDQE3zAFw",
 
   TABLE_NAME: "teacher_posts",
 
