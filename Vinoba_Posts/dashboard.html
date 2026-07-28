@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinoba Posts · Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand"><span class="dot"></span> Vinoba Posts</div>
+    <span class="spacer"></span>
+    <a href="index.html">Upload</a>
+    <a href="dashboard.html" class="active">Dashboard</a>
+  </nav>
+
+  <div class="wrap wide">
+    <h1>Dashboard</h1>
+    <p class="sub">Live overview of what's stored. Charts and filters coming next — tell me what you want to see.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num" id="totalPosts">…</div>
+        <div class="lbl">Total posts in database</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="latestPeriod" style="font-size:18px;">…</div>
+        <div class="lbl">Latest reporting period</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="lastUpload" style="font-size:18px;">…</div>
+        <div class="lbl">Last upload</div>
+      </div>
+    </div>
+
+    <div class="msg" id="dashMsg"></div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2>COMING SOON</h2>
+      <p class="hint" style="margin-top:0;">
+        This is where we'll add district-wise breakdowns, subject/category charts,
+        week-over-week trends, and filters. Send me the views you want and I'll wire them up.
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
