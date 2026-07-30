@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vinoba Posts</title>
+  <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('vinoba_theme')||'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -13,6 +14,8 @@
       <button class="tab active" data-tab="dashboard">Dashboard</button>
       <button class="tab" data-tab="upload">Upload</button>
     </div>
+    <span class="nav-spacer"></span>
+    <button class="theme-btn" id="themeBtn" title="Toggle light / dark">🌙</button>
   </nav>
 
   <!-- ================= DASHBOARD ================= -->
@@ -65,10 +68,8 @@
     </div>
   </section>
 
-  <!-- libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <!-- app -->
   <script src="js/config.js"></script>
   <script src="js/common.js"></script>
   <script src="js/upload.js"></script>
