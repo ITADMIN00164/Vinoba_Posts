@@ -87,6 +87,21 @@
   const monthLabel = key => { const [y, m] = key.split("-").map(Number); return new Date(y, m - 1, 1).toLocaleString("en-US", { month: "short", year: "numeric" }); };
   const weekLabel  = v => v === "TOTAL" ? "All Weeks (Total)" : "Week " + v;
   const fmt = n => (n ?? 0).toLocaleString("en-IN");
+  const ord = n => { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+  // date span under each week header; includes month name only when a single month is shown
+  function weekDates(w, single) {
+    if (!w) return "";
+    const start = (w - 1) * 7 + 1; let end = w * 7;
+    if (single) {
+      const [y, m] = single.split("-").map(Number);
+      const last = new Date(y, m, 0).getDate();
+      end = w === 5 ? last : Math.min(end, last);
+      if (start > last) return "";
+      const mon = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "short" });
+      return `${ord(start)} ${mon} – ${ord(end)} ${mon}`;
+    }
+    return w === 5 ? `${ord(29)} – end` : `${ord(start)} – ${ord(end)}`;
+  }
 
   async function initDashboard() {
     if (initialised) return;
@@ -182,10 +197,15 @@
     if (!lastRows.length) { lastTable = null; $("tableWrap").innerHTML = `<div class="empty">No data for the selected filters.</div>`; return; }
     const { months, map } = pivot(lastRows);
     const groups = selectedGroups();
+    const single = months.length === 1 ? months[0] : null;
+    groups.forEach(g => g.dates = g.key === 0 ? "" : weekDates(g.key, single));
     lastTable = { months, map, groups };
 
     let h = '<table class="grid"><thead><tr><th class="corner" rowspan="2">Month</th>';
-    groups.forEach(g => h += `<th class="grp${g.key === 0 ? " total" : ""}" colspan="3">${g.name}</th>`);
+    groups.forEach(g => {
+      const d = g.dates ? `<div class="grp-dates">${g.dates}</div>` : "";
+      h += `<th class="grp${g.key === 0 ? " total" : ""}" colspan="3">${g.name}${d}</th>`;
+    });
     h += '</tr><tr>';
     groups.forEach(g => SUBS.forEach(s => h += `<th class="sub${g.key === 0 ? " total" : ""}">${s}</th>`));
     h += '</tr></thead><tbody>';
@@ -206,7 +226,7 @@
     if (!lastTable) return;
     const { months, map, groups } = lastTable;
     const row0 = ["Month"], row1 = [""];
-    groups.forEach(g => { row0.push(g.name, "", ""); SUBS.forEach(s => row1.push(s)); });
+    groups.forEach(g => { row0.push(g.dates ? `${g.name} (${g.dates})` : g.name, "", ""); SUBS.forEach(s => row1.push(s)); });
     const aoa = [row0, row1];
     months.forEach(mk => {
       const r = [monthLabel(mk)];
