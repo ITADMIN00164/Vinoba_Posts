@@ -7,11 +7,11 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   // ---------------- reusable multi-select dropdown ----------------
-  function MultiSelect(container, { title, labelFn, onApply }) {
+  function MultiSelect(container, { title, labelFn, onApply, wide }) {
     labelFn = labelFn || (v => v);
     let options = [], checked = new Set(), applied = new Set(), enabled = true;
 
-    const root   = document.createElement("div"); root.className = "ms";
+    const root   = document.createElement("div"); root.className = "ms" + (wide ? " ms-wide" : "");
     const btn    = document.createElement("button"); btn.type = "button"; btn.className = "ms-btn";
     const panel  = document.createElement("div"); panel.className = "ms-panel";
     const search = document.createElement("input"); search.className = "ms-search"; search.placeholder = "Search…";
@@ -88,7 +88,6 @@
   const weekLabel  = v => v === "TOTAL" ? "All Weeks (Total)" : "Week " + v;
   const fmt = n => (n ?? 0).toLocaleString("en-IN");
   const ord = n => { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
-  // date span under each week header; includes month name only when a single month is shown
   function weekDates(w, single) {
     if (!w) return "";
     const start = (w - 1) * 7 + 1; let end = w * 7;
@@ -113,14 +112,13 @@
     }
     const fb = $("filterBar");
     community = MultiSelect(fb, { title: "Communities", onApply: onCommunityApply });
-    district  = MultiSelect(fb, { title: "Districts",   onApply: v => { filters.districts = v; loadTable(); } });
-    category  = MultiSelect(fb, { title: "Categories",  onApply: v => { filters.categories = v; loadTable(); } });
-    subject   = MultiSelect(fb, { title: "Subjects",    onApply: v => { filters.subjects = v; loadTable(); } });
+    district  = MultiSelect(fb, { title: "Districts",   onApply: async v => { filters.districts = v; await refreshSubjects(); loadTable(); } });
+    category  = MultiSelect(fb, { title: "Categories",  onApply: async v => { filters.categories = v; await refreshSubjects(); loadTable(); } });
+    subject   = MultiSelect(fb, { title: "Subjects", wide: true, onApply: v => { filters.subjects = v; loadTable(); } });
     month     = MultiSelect(fb, { title: "Months", labelFn: monthLabel, onApply: v => { filters.months = v; loadTable(); } });
     week      = MultiSelect(fb, { title: "Weeks", labelFn: weekLabel, onApply: v => { filters.weeks = v; render(); } });
-    district.setEnabled(false, "Choose a community first");
     week.setOptions(["1", "2", "3", "4", "5", "TOTAL"]);
-    week.setSelected(["1"]);   // Week 1 by default
+    week.setSelected(["1"]);
 
     try {
       const { data, error } = await sb.rpc("dashboard_options");
@@ -131,23 +129,40 @@
       month.setOptions(data.months || []);
     } catch (e) { return showDashError(e); }
 
+    await loadDistricts();   // all districts across all states by default
+
     $("dncToggle").addEventListener("change", e => { filters.includeDnc = e.target.checked; loadTable(); });
     $("downloadBtn").addEventListener("click", downloadExcel);
+    $("snapshotBtn").addEventListener("click", downloadSnapshot);
     loadTable();
   }
   window.__initDashboard = initDashboard;
 
+  async function loadDistricts() {
+    const { data, error } = await sb.rpc("dashboard_districts", { p_communities: filters.communities });
+    if (error) throw error;
+    district.setOptions((data || []).map(r => r.district));
+  }
+
   async function onCommunityApply(sel) {
     filters.communities = sel; filters.districts = [];
-    if (sel.length) {
-      try {
-        const { data, error } = await sb.rpc("dashboard_districts", { p_communities: sel });
-        if (error) throw error;
-        district.setOptions((data || []).map(r => r.district));
-        district.setEnabled(true);
-      } catch (e) { return showDashError(e); }
-    } else { district.setOptions([]); district.setEnabled(false, "Choose a community first"); }
+    try { await loadDistricts(); await refreshSubjects(); }
+    catch (e) { return showDashError(e); }
     loadTable();
+  }
+
+  // narrow the Subject list to what exists for the chosen community / district / category
+  async function refreshSubjects() {
+    try {
+      const { data, error } = await sb.rpc("dashboard_subjects", {
+        p_communities: filters.communities,
+        p_districts:   filters.districts,
+        p_categories:  filters.categories
+      });
+      if (error) throw error;
+      subject.setOptions((data || []).map(r => r.subject));
+      filters.subjects = [];   // options changed -> reset to "all"
+    } catch (e) { showDashError(e); }
   }
 
   function showDashError(e) {
@@ -183,7 +198,6 @@
 
   const SUBS = ["Unique Schools Posted", "Unique Teachers Posted", "Total Posts"];
 
-  // build the column groups from the Week filter (client-side, no re-query)
   function selectedGroups() {
     const sel = filters.weeks.length ? filters.weeks : ["TOTAL"];
     const weekNums = sel.filter(v => v !== "TOTAL").map(Number).sort((a, b) => a - b);
@@ -193,7 +207,31 @@
     return groups;
   }
 
+  // ------- applied-filters summary (shown above the table + in exports) -------
+  const j = a => a.join(", ");
+  function summaryPairs() {
+    return [
+      ["Community", filters.communities.length ? j(filters.communities) : "All"],
+      ["District",  filters.districts.length ? j(filters.districts) : "All"],
+      ["Category",  filters.categories.length ? j(filters.categories) : "All"],
+      ["Months",    filters.months.length ? filters.months.map(monthLabel).join(", ") : "All"],
+      ["Weeks",     filters.weeks.length ? filters.weeks.map(weekLabel).join(", ") : "All Weeks"],
+      ["DO NOT CONSIDER", filters.includeDnc ? "Included" : "Excluded"]
+    ];
+  }
+  function subjectsText() { return filters.subjects.length ? j(filters.subjects) : "All subjects"; }
+  function summaryLineForExcel() {
+    return [["Subjects", subjectsText()]].concat(summaryPairs())
+      .map(([k, v]) => `${k}: ${v}`).join("   |   ");
+  }
+  function renderSummary() {
+    $("summary").innerHTML =
+      `<div class="sum-subjects">Selected Subjects: <b>${esc(subjectsText())}</b></div>` +
+      `<div class="sum-filters">${esc(summaryPairs().map(([k, v]) => `${k}: ${v}`).join("   ·   "))}</div>`;
+  }
+
   function render() {
+    renderSummary();
     if (!lastRows.length) { lastTable = null; $("tableWrap").innerHTML = `<div class="empty">No data for the selected filters.</div>`; return; }
     const { months, map } = pivot(lastRows);
     const groups = selectedGroups();
@@ -222,24 +260,59 @@
     $("tableWrap").innerHTML = h;
   }
 
+  // ---------------- exports ----------------
   function downloadExcel() {
     if (!lastTable) return;
     const { months, map, groups } = lastTable;
-    const row0 = ["Month"], row1 = [""];
-    groups.forEach(g => { row0.push(g.dates ? `${g.name} (${g.dates})` : g.name, "", ""); SUBS.forEach(s => row1.push(s)); });
-    const aoa = [row0, row1];
+    const totalCols = 1 + groups.length * 3;
+
+    const header0 = ["Month"], header1 = [""];
+    groups.forEach(g => { header0.push(g.dates ? `${g.name} (${g.dates})` : g.name, "", ""); SUBS.forEach(s => header1.push(s)); });
+
+    const aoa = [[summaryLineForExcel()], [], header0, header1];   // row 1 = applied filters
     months.forEach(mk => {
       const r = [monthLabel(mk)];
       groups.forEach(g => { const c = (map[mk] && map[mk][g.key]) || { s: 0, t: 0, p: 0 }; r.push(c.s, c.t, c.p); });
       aoa.push(r);
     });
+
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const merges = [{ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }];
-    groups.forEach((_, i) => { const c = 1 + i * 3; merges.push({ s: { r: 0, c }, e: { r: 0, c: c + 2 } }); });
+    const merges = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },  // summary row across all cols
+      { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } }               // Month label
+    ];
+    groups.forEach((_, i) => { const c = 1 + i * 3; merges.push({ s: { r: 2, c }, e: { r: 2, c: c + 2 } }); });
     ws["!merges"] = merges;
-    ws["!cols"] = aoa[0].map((_, i) => ({ wch: i === 0 ? 12 : 20 }));
+    ws["!cols"] = header0.map((_, i) => ({ wch: i === 0 ? 12 : 20 }));
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Weekly");
     XLSX.writeFile(wb, `Vinoba_Weekly_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
+  async function downloadSnapshot() {
+    if (!lastTable) return;
+    const btn = $("snapshotBtn"); const old = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Rendering…';
+    try {
+      const bg = (getComputedStyle(document.documentElement).getPropertyValue("--panel") || "#171a21").trim();
+      const tableEl = $("tableWrap").querySelector("table");
+      const area = document.createElement("div");
+      area.style.cssText = `position:fixed;left:-99999px;top:0;padding:24px;background:${bg};display:inline-block;`;
+      const sumClone = $("summary").cloneNode(true);
+      sumClone.style.marginBottom = "16px";
+      area.appendChild(sumClone);
+      if (tableEl) area.appendChild(tableEl.cloneNode(true));
+      document.body.appendChild(area);
+      const canvas = await html2canvas(area, { backgroundColor: bg, scale: 2 });
+      area.remove();
+      canvas.toBlob(b => {
+        const u = URL.createObjectURL(b);
+        const a = document.createElement("a");
+        a.href = u; a.download = `Vinoba_Snapshot_${new Date().toISOString().slice(0, 10)}.png`;
+        a.click(); URL.revokeObjectURL(u);
+      });
+    } catch (e) { showDashError(e); }
+    finally { btn.disabled = false; btn.innerHTML = old; }
   }
 })();
