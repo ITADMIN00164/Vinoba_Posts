@@ -130,6 +130,7 @@
     } catch (e) { return showDashError(e); }
 
     await loadDistricts();   // all districts across all states by default
+    loadDateRange();
 
     $("dncToggle").addEventListener("change", e => { filters.includeDnc = e.target.checked; loadTable(); });
     $("downloadBtn").addEventListener("click", downloadExcel);
@@ -142,6 +143,15 @@
     const { data, error } = await sb.rpc("dashboard_districts", { p_communities: filters.communities });
     if (error) throw error;
     district.setOptions((data || []).map(r => r.district));
+  }
+
+  const fmtDate = s => { if (!s) return "—"; const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); };
+  async function loadDateRange() {
+    try {
+      const { data, error } = await sb.rpc("dashboard_date_range");
+      if (error || !data || !data[0] || !data[0].min_date) return;
+      $("dataRange").textContent = `Data available from ${fmtDate(data[0].min_date)} to ${fmtDate(data[0].max_date)}`;
+    } catch (e) { /* non-critical */ }
   }
 
   async function onCommunityApply(sel) {
