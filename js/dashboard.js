@@ -298,6 +298,7 @@
       const bg = (getComputedStyle(document.documentElement).getPropertyValue("--panel") || "#171a21").trim();
       const tableEl = $("tableWrap").querySelector("table");
       const area = document.createElement("div");
+      area.className = "snapshot-render";
       area.style.cssText = `position:fixed;left:-99999px;top:0;padding:24px;background:${bg};display:inline-block;`;
       const sumClone = $("summary").cloneNode(true);
       sumClone.style.marginBottom = "16px";
