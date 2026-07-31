@@ -81,6 +81,8 @@ input[type="file"]::file-selector-button { background: var(--panel); color: var(
 .ms-panel { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 40;
   background: var(--panel); border: 1px solid var(--border); border-radius: 11px; padding: 10px; box-shadow: 0 16px 40px var(--shadow); }
 .ms-panel.show { display: block; }
+.ms-wide .ms-panel { width: 360px; right: auto; }
+@media (max-width: 700px) { .ms-wide .ms-panel { width: 260px; } }
 .ms-search { width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
   padding: 8px 10px; border-radius: 8px; font-size: 13px; margin-bottom: 8px; }
 .ms-all { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent);
@@ -115,6 +117,13 @@ table.grid tbody tr:hover td { background: var(--panel-2); }
 table.grid tbody tr:hover td.mcell { background: var(--panel-2); }
 
 .loading, .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* ---- applied-filters summary above the table ---- */
+.summary { margin: 0 0 14px; }
+.summary:empty { display: none; }
+.sum-subjects { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+.sum-subjects b { color: var(--accent-strong); font-weight: 600; }
+.sum-filters { font-size: 12px; color: var(--muted); }
 
 /* ---- messages ---- */
 .msg { border-radius: 10px; padding: 14px 16px; margin: 0 0 16px; font-size: 14px; display: none; }
