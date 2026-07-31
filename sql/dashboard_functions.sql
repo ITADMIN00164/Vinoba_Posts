@@ -3,7 +3,16 @@
 --  Run this in Supabase SQL Editor AFTER schema.sql (run once).
 -- ============================================================
 
--- 1) Distinct values for the Community / Category / Subject / Month filters
+-- 1) Earliest and latest post date in the database
+create or replace function public.dashboard_date_range()
+returns table(min_date date, max_date date) language sql stable as $$
+  select min(post_created_at at time zone 'UTC')::date,
+         max(post_created_at at time zone 'UTC')::date
+  from public.teacher_posts
+  where post_created_at is not null;
+$$;
+
+-- 2) Distinct values for the Community / Category / Subject / Month filters
 create or replace function public.dashboard_options()
 returns json language sql stable as $$
   select json_build_object(
@@ -30,6 +39,22 @@ returns table(district text) language sql stable as $$
   where district_name is not null
     and (coalesce(cardinality(p_communities),0) = 0 or community_name = any(p_communities))
   order by district_name;
+$$;
+
+-- 2b) Subjects, dependent on the chosen community / district / category
+create or replace function public.dashboard_subjects(
+  p_communities text[] default null,
+  p_districts   text[] default null,
+  p_categories  text[] default null
+)
+returns table(subject text) language sql stable as $$
+  select distinct subject_name
+  from public.teacher_posts
+  where subject_name is not null
+    and (coalesce(cardinality(p_communities),0) = 0 or community_name = any(p_communities))
+    and (coalesce(cardinality(p_districts),0)   = 0 or district_name  = any(p_districts))
+    and (coalesce(cardinality(p_categories),0)  = 0 or category_name  = any(p_categories))
+  order by subject_name;
 $$;
 
 -- 3) The weekly table data
@@ -82,6 +107,8 @@ language sql stable as $$
 $$;
 
 -- Let the public anon key call these read-only functions
+grant execute on function public.dashboard_date_range()              to anon;
 grant execute on function public.dashboard_options()                 to anon;
 grant execute on function public.dashboard_districts(text[])          to anon;
+grant execute on function public.dashboard_subjects(text[],text[],text[]) to anon;
 grant execute on function public.dashboard_weekly(text[],text[],text[],text[],text[],boolean) to anon;
