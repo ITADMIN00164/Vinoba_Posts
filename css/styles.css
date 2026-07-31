@@ -41,6 +41,8 @@ body { margin: 0; background: var(--bg); color: var(--text);
 h1 { font-size: 22px; margin: 0 0 4px; }
 .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
 .sub em { font-style: normal; color: var(--text); opacity: .85; }
+.data-range { font-size: 13px; color: var(--accent-strong); font-weight: 600; margin: -14px 0 22px; }
+.data-range:empty { display: none; }
 .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
 .card h2 { font-size: 13px; letter-spacing: .5px; color: var(--muted); margin: 0 0 14px; }
 
